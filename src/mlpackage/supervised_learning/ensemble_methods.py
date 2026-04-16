@@ -1,7 +1,14 @@
 """
 Ensemble Methods
 
-Implements two ensemble classifiers built on top of DecisionTreeClassifier:
+BaggingClassifier
+    Trains independent copies of any base estimator, each on a bootstrap
+    sample of the training data. Predictions are made by majority vote across
+    all estimators. Works with any estimator that implements fit and predict.
+
+VotingClassifier
+    Combines a fixed set of heterogeneous estimators via hard voting. Each
+    estimator casts one vote per sample; the class with the most votes wins.
 
 RandomForestClassifier
     Trains an independent ensemble of trees, each on a bootstrap sample of
@@ -14,15 +21,147 @@ AdaBoostClassifier
     weights are updated to focus on previously misclassified examples. The
     final prediction is a weighted majority vote across all rounds.
 
-Both classes expose the same fit / predict / predict_proba / score interface
-as DecisionTreeClassifier.
+All classes expose the same fit / predict / score interface.
 """
 
 from __future__ import annotations
-from typing import Optional
+import copy
+from typing import Any, Optional
 import numpy as np
 
 from .decision_tree import DecisionTreeClassifier
+
+
+# ------------------------------------------------------------------
+# Bagging
+# ------------------------------------------------------------------
+
+class BaggingClassifier:
+    """
+    Bootstrap Aggregating (Bagging) over any base estimator.
+
+    Each estimator is trained on a bootstrap sample — n_samples rows drawn
+    with replacement. Predictions are made by majority vote: each estimator
+    contributes one vote per sample and the class with the most votes wins.
+
+    Unlike RandomForestClassifier, BaggingClassifier does not subsample
+    features at each split. It is the base estimator's responsibility to
+    handle any internal randomness.
+
+    Parameters
+    ----------
+    base_estimator : object with fit(X, y) and predict(X) methods
+        Template estimator. A deep copy is made for each member of the
+        ensemble so the original object is never modified.
+        Defaults to DecisionTreeClassifier().
+    n_estimators : int
+        Number of estimators to train.
+    random_state : int or None
+        Seed for bootstrap sampling.
+    """
+
+    def __init__(
+        self,
+        base_estimator: Any = None,
+        n_estimators: int = 10,
+        random_state: Optional[int] = None,
+    ):
+        self.base_estimator = base_estimator
+        self.n_estimators = n_estimators
+        self.random_state = random_state
+
+        self.estimators_: list[Any] = []
+        self.n_classes_: Optional[int] = None
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "BaggingClassifier":
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y)
+
+        n_samples = len(y)
+        self.n_classes_ = int(y.max()) + 1
+        self.estimators_ = []
+
+        template = self.base_estimator if self.base_estimator is not None else DecisionTreeClassifier()
+        rng = np.random.default_rng(self.random_state)
+
+        for _ in range(self.n_estimators):
+            indices = rng.integers(0, n_samples, size=n_samples)
+            estimator = copy.deepcopy(template)
+            estimator.fit(X[indices], y[indices])
+            self.estimators_.append(estimator)
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        if not self.estimators_:
+            raise RuntimeError("Call fit before predicting.")
+        X = np.asarray(X, dtype=float)
+
+        # Collect one prediction per estimator, then take the majority class.
+        votes = np.array([est.predict(X) for est in self.estimators_])  # (n_estimators, n_samples)
+        return np.array([
+            np.bincount(votes[:, i], minlength=self.n_classes_).argmax()
+            for i in range(X.shape[0])
+        ])
+
+    def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        return float(np.mean(self.predict(X) == np.asarray(y)))
+
+
+# ------------------------------------------------------------------
+# Voting
+# ------------------------------------------------------------------
+
+class VotingClassifier:
+    """
+    Hard voting ensemble over a fixed set of heterogeneous estimators.
+
+    Each estimator casts one vote per sample. The class that receives the
+    most votes is the final prediction. Ties are broken by the lowest class
+    index.
+
+    Parameters
+    ----------
+    estimators : list of (name, estimator) tuples
+        Each estimator must implement fit(X, y) and predict(X).
+    """
+
+    def __init__(self, estimators: list[tuple[str, Any]]):
+        if not estimators:
+            raise ValueError("estimators must be a non-empty list of (name, estimator) tuples.")
+        self.estimators = estimators
+
+        self.estimators_: list[Any] = []
+        self.n_classes_: Optional[int] = None
+
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "VotingClassifier":
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y)
+
+        self.n_classes_ = int(y.max()) + 1
+        self.estimators_ = []
+
+        for _, estimator in self.estimators:
+            est = copy.deepcopy(estimator)
+            est.fit(X, y)
+            self.estimators_.append(est)
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        if not self.estimators_:
+            raise RuntimeError("Call fit before predicting.")
+        X = np.asarray(X, dtype=float)
+
+        # Each fitted estimator votes; majority class wins per sample.
+        votes = np.array([est.predict(X) for est in self.estimators_])  # (n_estimators, n_samples)
+        return np.array([
+            np.bincount(votes[:, i], minlength=self.n_classes_).argmax()
+            for i in range(X.shape[0])
+        ])
+
+    def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        return float(np.mean(self.predict(X) == np.asarray(y)))
 
 
 # ------------------------------------------------------------------
