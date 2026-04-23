@@ -17,6 +17,7 @@ backward passes operate on the full batch, so memory scales with dataset size.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import Union, Sequence
 
 import numpy as np
@@ -63,7 +64,7 @@ def _relu_grad(z: np.ndarray) -> np.ndarray:
 # Base
 # ---------------------------------------------------------------------------
 
-class _MLPBase:
+class _MLPBase(ABC):
     def __init__(
         self,
         hidden_layer_sizes: Sequence[int] = (64, 32),
@@ -119,12 +120,13 @@ class _MLPBase:
             activations.append(a)
         return zs, activations
 
-    def _output_activation(self, _z: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
+    @abstractmethod
+    def _output_activation(self, z: np.ndarray) -> np.ndarray: ...
 
-    def _output_grad(self, _a_out: np.ndarray, _y: np.ndarray) -> np.ndarray:
+    @abstractmethod
+    def _output_grad(self, a_out: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Gradient of loss w.r.t. pre-activation at the output layer."""
-        raise NotImplementedError
+        ...
 
     def _backward(
         self,
