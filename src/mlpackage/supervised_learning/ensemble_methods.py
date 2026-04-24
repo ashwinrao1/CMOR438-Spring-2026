@@ -74,6 +74,19 @@ class BaggingClassifier:
         self.n_classes_: Optional[int] = None
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "BaggingClassifier":
+        """
+        Train n_estimators copies of the base estimator on bootstrap samples.
+
+        Parameters
+        ----------
+        X : array of shape (n_samples, n_features)
+        y : array of shape (n_samples,)
+            Integer class labels starting at 0.
+
+        Returns
+        -------
+        self : BaggingClassifier
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
 
@@ -93,18 +106,33 @@ class BaggingClassifier:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict class labels via majority vote across all estimators.
+
+        Parameters
+        ----------
+        X : array of shape (n_query, n_features)
+
+        Returns
+        -------
+        y_pred : array of shape (n_query,)
+        """
         if not self.estimators_:
             raise RuntimeError("Call fit before predicting.")
         X = np.asarray(X, dtype=float)
+        n_samples = X.shape[0]
 
-        # Collect one prediction per estimator, then take the majority class.
-        votes = np.array([est.predict(X) for est in self.estimators_])  # (n_estimators, n_samples)
-        return np.array([
-            np.bincount(votes[:, i], minlength=self.n_classes_).argmax()
-            for i in range(X.shape[0])
-        ])
+        # Shape: (n_estimators, n_samples) — each row is one estimator's predictions.
+        votes = np.array([est.predict(X) for est in self.estimators_])
+
+        # Accumulate vote counts into (n_samples, n_classes) without a Python loop.
+        class_counts = np.zeros((n_samples, self.n_classes_), dtype=int)
+        for v in votes:
+            class_counts[np.arange(n_samples), v] += 1
+        return class_counts.argmax(axis=1)
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Return classification accuracy on (X, y)."""
         return float(np.mean(self.predict(X) == np.asarray(y)))
 
 
@@ -135,6 +163,19 @@ class VotingClassifier:
         self.n_classes_: Optional[int] = None
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "VotingClassifier":
+        """
+        Fit each estimator on the full training set.
+
+        Parameters
+        ----------
+        X : array of shape (n_samples, n_features)
+        y : array of shape (n_samples,)
+            Integer class labels starting at 0.
+
+        Returns
+        -------
+        self : VotingClassifier
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
 
@@ -149,18 +190,31 @@ class VotingClassifier:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict class labels via majority vote across all estimators.
+
+        Parameters
+        ----------
+        X : array of shape (n_query, n_features)
+
+        Returns
+        -------
+        y_pred : array of shape (n_query,)
+        """
         if not self.estimators_:
             raise RuntimeError("Call fit before predicting.")
         X = np.asarray(X, dtype=float)
+        n_samples = X.shape[0]
 
-        # Each fitted estimator votes; majority class wins per sample.
-        votes = np.array([est.predict(X) for est in self.estimators_])  # (n_estimators, n_samples)
-        return np.array([
-            np.bincount(votes[:, i], minlength=self.n_classes_).argmax()
-            for i in range(X.shape[0])
-        ])
+        votes = np.array([est.predict(X) for est in self.estimators_])
+
+        class_counts = np.zeros((n_samples, self.n_classes_), dtype=int)
+        for v in votes:
+            class_counts[np.arange(n_samples), v] += 1
+        return class_counts.argmax(axis=1)
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Return classification accuracy on (X, y)."""
         return float(np.mean(self.predict(X) == np.asarray(y)))
 
 
@@ -228,6 +282,19 @@ class RandomForestClassifier:
         self.feature_importances_: Optional[np.ndarray] = None
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "RandomForestClassifier":
+        """
+        Grow n_estimators trees on bootstrap samples of the training data.
+
+        Parameters
+        ----------
+        X : array of shape (n_samples, n_features)
+        y : array of shape (n_samples,)
+            Integer class labels starting at 0.
+
+        Returns
+        -------
+        self : RandomForestClassifier
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
 
@@ -266,17 +333,29 @@ class RandomForestClassifier:
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """
+        Average class probabilities across all trees.
+
+        Parameters
+        ----------
+        X : array of shape (n_query, n_features)
+
+        Returns
+        -------
+        proba : array of shape (n_query, n_classes)
+        """
         if not self.estimators_:
             raise RuntimeError("Call fit before predicting.")
         X = np.asarray(X, dtype=float)
-        # Average class probabilities across all trees.
         proba_sum = sum(tree.predict_proba(X) for tree in self.estimators_)
         return proba_sum / self.n_estimators
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """Return the class with the highest average probability for each row in X."""
         return np.argmax(self.predict_proba(X), axis=1)
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Return classification accuracy on (X, y)."""
         return float(np.mean(self.predict(X) == np.asarray(y)))
 
     def _resolve_max_features(self, n_features: int) -> int:
@@ -343,6 +422,19 @@ class AdaBoostClassifier:
         self.n_classes_: Optional[int] = None
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "AdaBoostClassifier":
+        """
+        Run up to n_estimators rounds of SAMME boosting.
+
+        Parameters
+        ----------
+        X : array of shape (n_samples, n_features)
+        y : array of shape (n_samples,)
+            Integer class labels starting at 0.
+
+        Returns
+        -------
+        self : AdaBoostClassifier
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
 
@@ -389,11 +481,23 @@ class AdaBoostClassifier:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict class labels via weighted majority vote across all rounds.
+
+        Parameters
+        ----------
+        X : array of shape (n_query, n_features)
+
+        Returns
+        -------
+        y_pred : array of shape (n_query,)
+        """
         if not self.estimators_:
             raise RuntimeError("Call fit before predicting.")
         X = np.asarray(X, dtype=float)
 
-        # Accumulate weighted votes: score[i, k] = sum of alphas where h_t(x_i) == k
+        # score[i, k] accumulates the total alpha weight of rounds that
+        # predicted class k for sample i.
         scores = np.zeros((len(X), self.n_classes_))
         for tree, alpha in zip(self.estimators_, self.alphas_):
             preds = tree.predict(X)

@@ -22,29 +22,11 @@ from typing import Literal, Union, Sequence
 
 import numpy as np
 
+from ._utils import _as2d_float, _as1d
+
 ArrayLike = Union[np.ndarray, Sequence]
 
 __all__ = ["KNNClassifier", "KNNRegressor"]
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _as2d_float(X: ArrayLike, name: str = "X") -> np.ndarray:
-    arr = np.asarray(X, dtype=float)
-    if arr.ndim != 2:
-        raise ValueError(f"{name} must be 2-D, got shape {arr.shape}.")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty.")
-    return arr
-
-
-def _as1d(y: ArrayLike, name: str = "y") -> np.ndarray:
-    arr = np.asarray(y)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be 1-D, got shape {arr.shape}.")
-    return arr
 
 
 def _pairwise_distances(XA: np.ndarray, XB: np.ndarray, metric: str) -> np.ndarray:
@@ -162,6 +144,15 @@ class KNNClassifier(_KNNBase):
         Distance metric used to locate neighbors.
     weights : {'uniform', 'distance'}
         Neighbor weighting scheme.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> X_train = np.array([[1.0, 0.0], [0.0, 1.0], [5.0, 5.0], [6.0, 5.0]])
+    >>> y_train = np.array([0, 0, 1, 1])
+    >>> clf = KNNClassifier(n_neighbors=2)
+    >>> clf.fit(X_train, y_train).predict(np.array([[0.5, 0.5]]))
+    array([0])
     """
 
     def fit(self, X: ArrayLike, y: ArrayLike) -> "KNNClassifier":
@@ -226,23 +217,21 @@ class KNNRegressor(_KNNBase):
         Distance metric used to locate neighbors.
     weights : {'uniform', 'distance'}
         Neighbor weighting scheme.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> X_train = np.array([[1.0], [2.0], [3.0], [4.0]])
+    >>> y_train = np.array([1.0, 2.0, 3.0, 4.0])
+    >>> reg = KNNRegressor(n_neighbors=2)
+    >>> reg.fit(X_train, y_train).predict(np.array([[2.5]]))
+    array([2.5])
     """
 
     def fit(self, X: ArrayLike, y: ArrayLike) -> "KNNRegressor":
-        X = _as2d_float(X, "X")
-        y = _as1d(y, "y").astype(float)
-        if X.shape[0] != y.shape[0]:
-            raise ValueError(
-                f"X and y must have the same number of samples, "
-                f"got {X.shape[0]} and {y.shape[0]}."
-            )
-        if self.n_neighbors > X.shape[0]:
-            raise ValueError(
-                f"n_neighbors ({self.n_neighbors}) cannot exceed "
-                f"the number of training samples ({X.shape[0]})."
-            )
-        self._X = X
-        self._y = y
+        # Cast y to float before handing off to the base class so that
+        # integer targets (e.g., [1, 2, 3]) produce float predictions.
+        super().fit(X, _as1d(y, "y").astype(float))
         return self
 
     def predict(self, X: ArrayLike) -> np.ndarray:

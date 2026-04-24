@@ -16,6 +16,8 @@ from __future__ import annotations
 from typing import Callable, Optional
 import numpy as np
 
+__all__ = ["GradientDescent1D", "GradientDescentND"]
+
 
 # ------------------------------------------------------------------
 # 1-D Gradient Descent
@@ -61,10 +63,11 @@ class GradientDescent1D:
 
         Parameters
         ----------
-        f : callable w -> scalar
-            Objective function (used only for history tracking).
-        df : callable w -> scalar
-            Derivative of f with respect to w.
+        f : callable
+            Objective function ``w -> scalar``. Used only for history
+            tracking; not evaluated during the gradient step itself.
+        df : callable
+            Derivative ``w -> scalar`` of f with respect to w.
         w_init : float
             Starting value.
 
@@ -72,7 +75,15 @@ class GradientDescent1D:
         -------
         w : float
             Value of w at convergence or after n_iterations steps.
-        history : list of (w, f(w)) tuples, one per iteration.
+        history : list of (float, float)
+            One ``(w, f(w))`` tuple per iteration.
+
+        Examples
+        --------
+        >>> opt = GradientDescent1D(learning_rate=0.1)
+        >>> w, hist = opt.optimize(lambda w: w**2, lambda w: 2*w, w_init=5.0)
+        >>> round(w, 4)
+        0.0
         """
         w = float(w_init)
         history: list[tuple[float, float]] = []
@@ -132,19 +143,30 @@ class GradientDescentND:
 
         Parameters
         ----------
-        grad_fn : callable w -> gradient array (same shape as w)
-            Returns ∇f at the current parameter vector.
-        w_init : 1-D array
+        grad_fn : callable
+            ``w -> ndarray`` — returns ∇f at the current parameter vector.
+            Output must have the same shape as w.
+        w_init : array-like of shape (n,)
             Initial parameter vector.
-        loss_fn : optional callable w -> scalar
-            If provided, its value is recorded in history each iteration.
-            If None, history contains the gradient norm ||∇f(w)||_2 instead.
+        loss_fn : callable or None
+            ``w -> float``. If provided, its value is appended to history
+            each iteration. If None, history contains ||∇f(w)||₂ instead.
 
         Returns
         -------
-        w : 1-D array
+        w : ndarray of shape (n,)
             Parameter vector at convergence or after n_iterations steps.
-        history : list of floats, one per iteration.
+        history : list of float
+            One value per iteration: loss_fn(w) if provided, else grad norm.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> opt = GradientDescentND(learning_rate=0.1)
+        >>> grad_fn = lambda w: 2 * w          # gradient of ||w||^2
+        >>> w, hist = opt.optimize(grad_fn, np.array([3.0, -4.0]))
+        >>> np.allclose(w, 0.0, atol=1e-4)
+        True
         """
         w = np.array(w_init, dtype=float)
         if w.ndim != 1:

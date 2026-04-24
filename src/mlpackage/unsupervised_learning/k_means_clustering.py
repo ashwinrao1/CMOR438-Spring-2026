@@ -109,7 +109,17 @@ class KMeans:
 
         Returns
         -------
-        self
+        self : KMeans
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[1,1],[1,2],[2,1],[9,9],[9,10],[10,9]])
+        >>> km = KMeans(n_clusters=2, random_state=0)
+        >>> km.fit(X)
+        KMeans(n_clusters=2, random_state=0)
+        >>> len(set(km.labels_))
+        2
         """
         X = _validate_inputs(X)
         n_samples = X.shape[0]

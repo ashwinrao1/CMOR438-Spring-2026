@@ -83,12 +83,20 @@ def confusion_matrix(y_true, y_pred):
     Returns
     -------
     cm : ndarray of shape (n_classes, n_classes)
+
+    Examples
+    --------
+    >>> confusion_matrix([0, 1, 1, 0], [0, 1, 0, 0])
+    array([[2, 0],
+           [1, 1]])
     """
     y_true, y_pred = _validate_1d_pair(y_true, y_pred)
+    y_true = y_true.astype(int)
+    y_pred = y_pred.astype(int)
     n_classes = int(max(y_true.max(), y_pred.max())) + 1
     cm = np.zeros((n_classes, n_classes), dtype=int)
-    for t, p in zip(y_true, y_pred):
-        cm[t, p] += 1
+    # np.add.at accumulates counts without a Python loop over samples.
+    np.add.at(cm, (y_true, y_pred), 1)
     return cm
 
 
@@ -96,9 +104,19 @@ def accuracy_score(y_true, y_pred):
     """
     Fraction of samples where y_true == y_pred.
 
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+    y_pred : array-like of shape (n_samples,)
+
     Returns
     -------
     accuracy : float in [0, 1]
+
+    Examples
+    --------
+    >>> accuracy_score([0, 1, 1, 0], [0, 1, 0, 0])
+    0.75
     """
     y_true, y_pred = _validate_1d_pair(y_true, y_pred)
     return float(np.mean(y_true == y_pred))
@@ -316,9 +334,19 @@ def mean_squared_error(y_true, y_pred):
     """
     Mean squared error: mean((y_true - y_pred)^2).
 
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+    y_pred : array-like of shape (n_samples,)
+
     Returns
     -------
     mse : float
+
+    Examples
+    --------
+    >>> mean_squared_error([1.0, 2.0, 3.0], [1.0, 2.0, 4.0])
+    0.3333333333333333
     """
     y_true, y_pred = _validate_1d_pair(y_true, y_pred)
     return float(np.mean((y_true - y_pred) ** 2))
@@ -328,9 +356,19 @@ def mean_absolute_error(y_true, y_pred):
     """
     Mean absolute error: mean(|y_true - y_pred|).
 
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+    y_pred : array-like of shape (n_samples,)
+
     Returns
     -------
     mae : float
+
+    Examples
+    --------
+    >>> mean_absolute_error([1.0, 2.0, 3.0], [1.0, 2.0, 4.0])
+    0.3333333333333333
     """
     y_true, y_pred = _validate_1d_pair(y_true, y_pred)
     return float(np.mean(np.abs(y_true - y_pred)))
@@ -344,11 +382,21 @@ def r2_score(y_true, y_pred):
     where SS_res = sum((y_true - y_pred)^2)
       and SS_tot = sum((y_true - mean(y_true))^2).
 
-    Returns 0 if SS_tot == 0 (constant target).
+    Returns 0.0 when SS_tot == 0 (constant target).
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+    y_pred : array-like of shape (n_samples,)
 
     Returns
     -------
     r2 : float
+
+    Examples
+    --------
+    >>> r2_score([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+    1.0
     """
     y_true, y_pred = _validate_1d_pair(y_true, y_pred)
     y_true = y_true.astype(float)

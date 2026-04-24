@@ -124,7 +124,19 @@ class LabelPropagation:
 
         Returns
         -------
-        self
+        self : LabelPropagation
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> A = np.array([[0,1,1,0,0],
+        ...               [1,0,1,0,0],
+        ...               [1,1,0,0,0],
+        ...               [0,0,0,0,1],
+        ...               [0,0,0,1,0]], dtype=float)
+        >>> lp = LabelPropagation(random_state=0)
+        >>> lp.fit(A).n_communities_
+        2
         """
         A = _as2d_float(A, "A")
         n_nodes = A.shape[0]
@@ -170,10 +182,17 @@ class LabelPropagation:
         degrees. Values near 1 indicate strong community structure; values
         near 0 suggest the partition is no better than random.
 
+        Q = (1 / 2m) * sum_{i,j} [A_{ij} - k_i*k_j / 2m] * delta(c_i, c_j)
+
         Parameters
         ----------
         A : array-like of shape (n_nodes, n_nodes)
             The same adjacency matrix passed to fit.
+
+        Returns
+        -------
+        Q : float
+            Modularity score, typically in (-0.5, 1].
         """
         self._check_fitted()
         A = _as2d_float(A, "A")
@@ -186,12 +205,16 @@ class LabelPropagation:
         if m == 0.0:
             raise ValueError("Modularity is undefined for a graph with no edges.")
         degrees = A.sum(axis=1)
-        Q = 0.0
-        for i in range(A.shape[0]):
-            for j in range(A.shape[0]):
-                if self.labels_[i] == self.labels_[j]:
-                    Q += A[i, j] - (degrees[i] * degrees[j]) / (2.0 * m)
-        return float(Q / (2.0 * m))
+
+        # Null-model matrix B[i,j] = k_i * k_j / 2m (expected edge weight).
+        B = np.outer(degrees, degrees) / (2.0 * m)
+
+        # Community membership matrix: same_community[i,j] = 1 iff labels match.
+        same_community = (self.labels_[:, None] == self.labels_[None, :]).astype(float)
+
+        # Q = sum of (A - B) * same_community, normalized by 2m.
+        Q = float(np.sum((A - B) * same_community) / (2.0 * m))
+        return Q
 
     def community_sizes(self) -> dict[int, int]:
         """Return a mapping from community label to the number of nodes it contains."""

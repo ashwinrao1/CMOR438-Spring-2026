@@ -23,34 +23,11 @@ from typing import Literal, Union, Sequence
 
 import numpy as np
 
+from ._utils import _as2d_float, _as1d_float, _add_intercept
+
 ArrayLike = Union[np.ndarray, Sequence]
 
 __all__ = ["LinearRegression"]
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _as2d_float(X: ArrayLike, name: str = "X") -> np.ndarray:
-    arr = np.asarray(X, dtype=float)
-    if arr.ndim != 2:
-        raise ValueError(f"{name} must be 2-D, got shape {arr.shape}.")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty.")
-    return arr
-
-
-def _as1d_float(y: ArrayLike, name: str = "y") -> np.ndarray:
-    arr = np.asarray(y, dtype=float)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be 1-D, got shape {arr.shape}.")
-    return arr
-
-
-def _add_intercept(X: np.ndarray) -> np.ndarray:
-    """Prepend a column of ones to X."""
-    return np.hstack([np.ones((X.shape[0], 1)), X])
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +101,16 @@ class LinearRegression:
 
         Returns
         -------
-        self
+        self : LinearRegression
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[1.0], [2.0], [3.0]])
+        >>> y = np.array([2.0, 4.0, 6.0])
+        >>> model = LinearRegression(solver='ols')
+        >>> model.fit(X, y).predict(np.array([[4.0]]))
+        array([8.])
         """
         X = _as2d_float(X, "X")
         y = _as1d_float(y, "y")

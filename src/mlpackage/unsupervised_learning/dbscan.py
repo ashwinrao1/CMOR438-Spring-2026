@@ -81,7 +81,16 @@ class DBSCAN:
 
         Returns
         -------
-        self
+        self : DBSCAN
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[1,1],[1,2],[2,1],[10,10],[10,11]])
+        >>> db = DBSCAN(eps=2.0, min_samples=2)
+        >>> labels = db.fit_predict(X)
+        >>> len(set(labels) - {-1})  # number of clusters found
+        2
         """
         X = _validate_inputs(X)
         n_samples = X.shape[0]

@@ -21,39 +21,11 @@ from typing import Union, Sequence
 
 import numpy as np
 
+from ._utils import _as2d_float, _as1d, _sigmoid, _add_intercept
+
 ArrayLike = Union[np.ndarray, Sequence]
 
 __all__ = ["LogisticRegression"]
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _as2d_float(X: ArrayLike, name: str = "X") -> np.ndarray:
-    arr = np.asarray(X, dtype=float)
-    if arr.ndim != 2:
-        raise ValueError(f"{name} must be 2-D, got shape {arr.shape}.")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty.")
-    return arr
-
-
-def _as1d(y: ArrayLike, name: str = "y") -> np.ndarray:
-    arr = np.asarray(y)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be 1-D, got shape {arr.shape}.")
-    return arr
-
-
-def _sigmoid(z: np.ndarray) -> np.ndarray:
-    """Numerically stable sigmoid: clips z to avoid overflow in exp."""
-    z = np.clip(z, -500, 500)
-    return 1.0 / (1.0 + np.exp(-z))
-
-
-def _add_intercept(X: np.ndarray) -> np.ndarray:
-    return np.hstack([np.ones((X.shape[0], 1)), X])
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +98,16 @@ class LogisticRegression:
 
         Returns
         -------
-        self
+        self : LogisticRegression
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[1.0], [2.0], [3.0], [4.0]])
+        >>> y = np.array([0, 0, 1, 1])
+        >>> clf = LogisticRegression(learning_rate=0.5, n_iterations=500)
+        >>> clf.fit(X, y).predict(X)
+        array([0, 0, 1, 1])
         """
         X = _as2d_float(X, "X")
         y = _as1d(y, "y")
@@ -234,15 +215,20 @@ class LogisticRegression:
             tpr_list.append(tp / n_pos if n_pos > 0 else 0.0)
             fpr_list.append(fp / n_neg if n_neg > 0 else 0.0)
 
-        fpr = np.array([0.0] + fpr_list + [1.0])
-        tpr = np.array([0.0] + tpr_list + [1.0])
-        thresholds = np.concatenate([[np.inf], thresholds, [0.0]])
+        # Prepend (0, 0): the "predict nothing positive" boundary point.
+        # No need to append (1, 1) explicitly: at the minimum threshold every
+        # sample is predicted positive, so the last loop point is already (1, 1).
+        fpr = np.array([0.0] + fpr_list)
+        tpr = np.array([0.0] + tpr_list)
+        thresholds = np.concatenate([[np.inf], thresholds])
         return fpr, tpr, thresholds
 
     def auc(self, X: ArrayLike, y: ArrayLike) -> float:
         """Return the area under the ROC curve using the trapezoidal rule."""
         fpr, tpr, _ = self.roc_curve(X, y)
-        return float(np.trapezoid(tpr, fpr))
+        # np.trapz is available in all supported NumPy versions; np.trapezoid
+        # was added in NumPy 2.0 and is not backward-compatible.
+        return float(np.trapz(tpr, fpr))
 
     # ------------------------------------------------------------------
     # Properties

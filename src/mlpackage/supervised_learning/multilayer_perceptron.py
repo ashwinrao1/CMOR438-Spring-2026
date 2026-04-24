@@ -22,35 +22,16 @@ from typing import Union, Sequence
 
 import numpy as np
 
+from ._utils import _as2d_float, _as1d, _sigmoid
+
 ArrayLike = Union[np.ndarray, Sequence]
 
 __all__ = ["MLPClassifier", "MLPRegressor"]
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# MLP-specific activations (not shared — live here only)
 # ---------------------------------------------------------------------------
-
-def _as2d_float(X: ArrayLike, name: str = "X") -> np.ndarray:
-    arr = np.asarray(X, dtype=float)
-    if arr.ndim != 2:
-        raise ValueError(f"{name} must be 2-D, got shape {arr.shape}.")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty.")
-    return arr
-
-
-def _as1d(y: ArrayLike, name: str = "y") -> np.ndarray:
-    arr = np.asarray(y)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be 1-D, got shape {arr.shape}.")
-    return arr
-
-
-def _sigmoid(z: np.ndarray) -> np.ndarray:
-    z = np.clip(z, -500, 500)
-    return 1.0 / (1.0 + np.exp(-z))
-
 
 def _relu(z: np.ndarray) -> np.ndarray:
     return np.maximum(0.0, z)
@@ -65,6 +46,14 @@ def _relu_grad(z: np.ndarray) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 class _MLPBase(ABC):
+    """
+    Shared forward/backward-pass logic for MLPClassifier and MLPRegressor.
+
+    Subclasses must implement ``_output_activation`` and ``_output_grad``
+    to define how the output layer is activated and how its loss gradient
+    is computed.
+    """
+
     def __init__(
         self,
         hidden_layer_sizes: Sequence[int] = (64, 32),
@@ -252,7 +241,17 @@ class MLPClassifier(_MLPBase):
 
         Returns
         -------
-        self
+        self : MLPClassifier
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
+        >>> y = np.array([0, 1, 1, 0])   # XOR
+        >>> clf = MLPClassifier(hidden_layer_sizes=(4,), n_iterations=2000,
+        ...                     random_state=0)
+        >>> clf.fit(X, y).score(X, y) >= 0.75
+        True
         """
         X = _as2d_float(X, "X")
         y = _as1d(y, "y")
@@ -341,7 +340,17 @@ class MLPRegressor(_MLPBase):
 
         Returns
         -------
-        self
+        self : MLPRegressor
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.linspace(0, 1, 20).reshape(-1, 1)
+        >>> y = (2 * X.ravel() + 1)
+        >>> reg = MLPRegressor(hidden_layer_sizes=(8,), n_iterations=3000,
+        ...                    learning_rate=0.05, random_state=0)
+        >>> reg.fit(X, y).score(X, y) > 0.95
+        True
         """
         X = _as2d_float(X, "X")
         y = _as1d(y, "y").astype(float)

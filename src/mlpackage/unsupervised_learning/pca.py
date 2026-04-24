@@ -88,7 +88,19 @@ class PCA:
 
         Returns
         -------
-        self
+        self : PCA
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> rng = np.random.default_rng(0)
+        >>> X = rng.standard_normal((100, 5))
+        >>> pca = PCA(n_components=2)
+        >>> X_reduced = pca.fit_transform(X)
+        >>> X_reduced.shape
+        (100, 2)
+        >>> pca.explained_variance_ratio_.sum() <= 1.0
+        True
         """
         X = _validate_inputs(X)
         n_samples, n_features = X.shape

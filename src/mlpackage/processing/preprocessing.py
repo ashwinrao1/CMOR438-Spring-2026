@@ -72,6 +72,15 @@ class StandardScaler:
     mean_ : ndarray of shape (n_features,)
     scale_ : ndarray of shape (n_features,)
         Standard deviation per feature. Zero-variance features have scale_ = 1.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> X = np.array([[1.0, 0.0], [3.0, 0.0]])
+    >>> scaler = StandardScaler()
+    >>> scaler.fit_transform(X)
+    array([[-1.,  0.],
+           [ 1.,  0.]])
     """
 
     def __init__(self):
@@ -183,6 +192,12 @@ class LabelEncoder:
     ----------
     classes_ : ndarray
         Sorted unique class labels seen during fit.
+
+    Examples
+    --------
+    >>> le = LabelEncoder()
+    >>> le.fit_transform(['cat', 'dog', 'cat', 'bird'])
+    array([1, 2, 1, 0])
     """
 
     def __init__(self):

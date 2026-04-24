@@ -21,29 +21,11 @@ from typing import Union, Sequence
 
 import numpy as np
 
+from ._utils import _as2d_float, _as1d
+
 ArrayLike = Union[np.ndarray, Sequence]
 
 __all__ = ["Perceptron"]
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _as2d_float(X: ArrayLike, name: str = "X") -> np.ndarray:
-    arr = np.asarray(X, dtype=float)
-    if arr.ndim != 2:
-        raise ValueError(f"{name} must be 2-D, got shape {arr.shape}.")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty.")
-    return arr
-
-
-def _as1d(y: ArrayLike, name: str = "y") -> np.ndarray:
-    arr = np.asarray(y)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be 1-D, got shape {arr.shape}.")
-    return arr
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +80,16 @@ class Perceptron:
 
         Returns
         -------
-        self
+        self : Perceptron
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+        >>> y = np.array([0, 1, 1, 1])   # OR gate
+        >>> clf = Perceptron()
+        >>> clf.fit(X, y).predict(X)
+        array([0, 1, 1, 1])
         """
         X = _as2d_float(X, "X")
         y = _as1d(y, "y")

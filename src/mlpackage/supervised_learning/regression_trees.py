@@ -20,6 +20,8 @@ from typing import Union, Sequence
 
 import numpy as np
 
+from ._utils import _as2d_float, _as1d_float
+
 ArrayLike = Union[np.ndarray, Sequence]
 
 __all__ = ["RegressionTree"]
@@ -56,23 +58,9 @@ class _Node:
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _as2d_float(X: ArrayLike, name: str = "X") -> np.ndarray:
-    arr = np.asarray(X, dtype=float)
-    if arr.ndim != 2:
-        raise ValueError(f"{name} must be 2-D, got shape {arr.shape}.")
-    if arr.size == 0:
-        raise ValueError(f"{name} must be non-empty.")
-    return arr
-
-
-def _as1d_float(y: ArrayLike, name: str = "y") -> np.ndarray:
-    arr = np.asarray(y, dtype=float)
-    if arr.ndim != 1:
-        raise ValueError(f"{name} must be 1-D, got shape {arr.shape}.")
-    return arr
-
-
-def _mse(y: np.ndarray) -> float:
+def _variance(y: np.ndarray) -> float:
+    # When leaves predict the mean of their samples, minimizing weighted
+    # variance across children is equivalent to minimizing weighted MSE.
     if y.size == 0:
         return 0.0
     return float(np.var(y))
@@ -85,13 +73,26 @@ def _best_split(
 ) -> tuple[int | None, float | None, float]:
     """
     Search all features and thresholds for the split that minimises the
-    weighted MSE of the two child partitions.
+    weighted variance (= weighted MSE) of the two child partitions.
 
-    Returns the best (feature_index, threshold, weighted_mse). If no
-    beneficial split exists, feature_index and threshold are None.
+    Parameters
+    ----------
+    X : ndarray of shape (n_samples, n_features)
+    y : ndarray of shape (n_samples,)
+    min_samples_split : int
+        Minimum required samples in each child partition.
+
+    Returns
+    -------
+    best_feature : int or None
+        Index of the splitting feature, or None if no beneficial split found.
+    best_threshold : float or None
+        Split threshold, or None if no beneficial split found.
+    best_variance : float
+        Weighted variance of the best split (or parent variance if no split).
     """
     n_samples, n_features = X.shape
-    best_feature, best_threshold, best_mse = None, None, _mse(y)
+    best_feature, best_threshold, best_variance = None, None, _variance(y)
 
     for feature in range(n_features):
         values = np.sort(np.unique(X[:, feature]))
@@ -107,15 +108,15 @@ def _best_split(
                 continue
 
             weighted = (
-                n_left * _mse(y[left_mask]) + n_right * _mse(y[right_mask])
+                n_left * _variance(y[left_mask]) + n_right * _variance(y[right_mask])
             ) / n_samples
 
-            if weighted < best_mse:
-                best_mse = weighted
+            if weighted < best_variance:
+                best_variance = weighted
                 best_feature = feature
                 best_threshold = threshold
 
-    return best_feature, best_threshold, best_mse
+    return best_feature, best_threshold, best_variance
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +166,16 @@ class RegressionTree:
 
         Returns
         -------
-        self
+        self : RegressionTree
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> X = np.array([[1.0], [2.0], [3.0], [4.0]])
+        >>> y = np.array([1.0, 2.0, 3.0, 4.0])
+        >>> tree = RegressionTree(max_depth=2)
+        >>> tree.fit(X, y).predict(np.array([[2.5]]))
+        array([2.5])
         """
         X = _as2d_float(X, "X")
         y = _as1d_float(y, "y")
