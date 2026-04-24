@@ -2,6 +2,33 @@
 
 A from-scratch machine learning library built with NumPy. No scikit-learn dependencies.
 
+## Installation
+
+```python
+# From the repo root, add src/ to your path or install in editable mode.
+import sys
+sys.path.insert(0, "src")
+```
+
+## Quick start
+
+Everything is importable directly from the top-level package:
+
+```python
+from mlpackage import (
+    KMeans, DBSCAN, PCA,
+    LinearRegression, LogisticRegression, RandomForestClassifier,
+    StandardScaler, train_test_split, accuracy_score,
+)
+```
+
+Sub-package imports also work:
+
+```python
+from mlpackage.supervised_learning import DecisionTreeClassifier
+from mlpackage.processing import confusion_matrix
+```
+
 ---
 
 ## Supervised Learning
@@ -20,7 +47,7 @@ Optional intercept prepended automatically (`fit_intercept=True`). Evaluation me
 
 ### `logistic_regression.py` — `LogisticRegression`
 
-Binary classifier using the logistic function and binary cross-entropy loss, trained by batch gradient descent. L2 regularization on feature weights. Exposes `predict_proba`, `predict`, `decision_function`, and a manually computed ROC curve and AUC.
+Binary classifier using the logistic function and binary cross-entropy loss, trained by batch gradient descent. L2 regularization on feature weights. Exposes `predict_proba`, `predict`, `decision_function`, a manually computed ROC curve, and AUC.
 
 ---
 
@@ -44,7 +71,7 @@ CART-style binary classification tree. Supports entropy (information gain) and G
 
 ### `regression_trees.py` — `RegressionTree`
 
-CART regression tree that minimizes mean squared error at each split. Leaves predict the mean target value of their training samples. Stops on `max_depth`, `min_samples_split`, or when no split reduces MSE.
+CART regression tree that minimizes weighted variance (equivalent to MSE) at each split. Leaves predict the mean target value of their training samples. Stops on `max_depth`, `min_samples_split`, or when no split reduces the criterion.
 
 ---
 
@@ -85,9 +112,25 @@ Standalone distance functions operating on 1-D NumPy arrays.
 | `euclidean` | √∑(a − b)² |
 | `manhattan` | ∑\|a − b\| |
 | `chebyshev` | max\|a − b\| |
-| `minkowski` | (∑\|a − b\|ᵖ)^(1/p) |
+| `minkowski_metric(p)` | (∑\|a − b\|ᵖ)^(1/p) |
 | `cosine` | 1 − a·b / (‖a‖‖b‖) |
 | `hamming` | fraction of positions where a ≠ b |
+
+Also exposes `get_metric(name)` and `pairwise_distances(A, B, metric)`.
+
+---
+
+### `_utils.py` *(internal)*
+
+Shared input-validation and activation helpers used across the supervised learning modules. Not part of the public API.
+
+| Helper | Purpose |
+|---|---|
+| `_as2d_float` | Validate and cast to 2-D float array |
+| `_as1d` | Validate and cast to 1-D array (preserves dtype) |
+| `_as1d_float` | Validate and cast to 1-D float array |
+| `_sigmoid` | Numerically stable sigmoid activation |
+| `_add_intercept` | Prepend a bias column of ones to X |
 
 ---
 
@@ -95,7 +138,7 @@ Standalone distance functions operating on 1-D NumPy arrays.
 
 ### `k_means_clustering.py` — `KMeans`
 
-Lloyd's algorithm. Centroids initialized randomly from the data or user-supplied. Convergence detected by maximum centroid shift across clusters. Exposes `cluster_centers_`, `labels_`, `inertia_`, and `n_iter_`. Also accepts new points via `predict`.
+Lloyd's algorithm. Centroids initialized randomly from the data or user-supplied. Convergence detected by maximum centroid shift across clusters. Exposes `cluster_centers_`, `labels_`, `inertia_`, and `n_iter_`. Accepts new points via `predict`.
 
 ---
 
@@ -113,7 +156,48 @@ Linear dimensionality reduction via eigendecomposition of the covariance matrix.
 
 ### `community_detection.py` — `LabelPropagation`
 
-Label propagation for community detection in undirected graphs. Each node iteratively adopts the majority label of its neighbors. Supports weighted edges (votes summed by edge weight). Update order is shuffled each iteration to reduce bias. Output communities are relabelled 0, 1, 2, ... in order of first appearance.
+Label propagation for community detection in undirected graphs. Each node iteratively adopts the majority label of its neighbors. Supports weighted edges (votes summed by edge weight). Update order is shuffled each iteration to reduce bias. Output communities are relabelled 0, 1, 2, ... in order of first appearance. Exposes `modularity(A)` and `community_sizes()`.
+
+---
+
+## Processing
+
+### `preprocessing.py`
+
+| Class / Function | Purpose |
+|---|---|
+| `StandardScaler` | Zero mean, unit variance (z-score normalization) |
+| `MinMaxScaler` | Scale features to a target range, default [0, 1] |
+| `LabelEncoder` | Encode categorical labels as integers 0, 1, 2, … |
+| `OneHotEncoder` | Encode integer labels as binary indicator rows |
+| `train_test_split` | Randomly split arrays into train and test subsets |
+
+All scalers expose `fit`, `transform`, `fit_transform`, and `inverse_transform`.
+
+---
+
+### `postprocessing.py`
+
+**Classification**
+
+| Function | Description |
+|---|---|
+| `confusion_matrix` | (n\_classes × n\_classes) count matrix |
+| `accuracy_score` | Fraction of correct predictions |
+| `precision_score` | TP / (TP + FP), macro/weighted/per-class |
+| `recall_score` | TP / (TP + FN), macro/weighted/per-class |
+| `f1_score` | Harmonic mean of precision and recall |
+| `classification_report` | Formatted per-class table with weighted averages |
+| `roc_curve` | FPR / TPR at every score threshold (binary) |
+| `auc` | Area under a curve via the trapezoidal rule |
+
+**Regression**
+
+| Function | Description |
+|---|---|
+| `mean_squared_error` | mean((y\_true − y\_pred)²) |
+| `mean_absolute_error` | mean(\|y\_true − y\_pred\|) |
+| `r2_score` | Coefficient of determination R² |
 
 ---
 
