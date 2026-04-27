@@ -226,9 +226,8 @@ class LogisticRegression:
     def auc(self, X: ArrayLike, y: ArrayLike) -> float:
         """Return the area under the ROC curve using the trapezoidal rule."""
         fpr, tpr, _ = self.roc_curve(X, y)
-        # np.trapz is available in all supported NumPy versions; np.trapezoid
-        # was added in NumPy 2.0 and is not backward-compatible.
-        return float(np.trapz(tpr, fpr))
+        _trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+        return float(_trapz(tpr, fpr))
 
     # ------------------------------------------------------------------
     # Properties

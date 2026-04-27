@@ -323,7 +323,8 @@ def auc(x, y):
     if len(x) != len(y):
         raise ValueError("x and y must have the same length.")
     order = np.argsort(x)
-    return float(np.trapz(y[order], x[order]))
+    _trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+    return float(_trapz(y[order], x[order]))
 
 
 # ==========================================================
