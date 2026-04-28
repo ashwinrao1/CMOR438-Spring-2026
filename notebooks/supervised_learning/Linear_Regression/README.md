@@ -1,64 +1,26 @@
-# Linear Regression — Combined Cycle Power Plant Dataset
+# Linear Regression (OLS and Ridge)
 
-## Algorithm
+## Model Architecture
 
-Ordinary Least Squares (OLS) linear regression finds the closed-form solution
-`w = (X'X)^{-1} X'y` that minimises the sum of squared residuals. Ridge regression adds an
-L2 penalty `alpha * ||w||^2` to the loss, shrinking coefficients toward zero in proportion
-to `alpha` and trading a small amount of bias for reduced variance. Both are implemented
-from scratch in `mlpackage`.
+**Ordinary Least Squares (OLS)** finds the coefficient vector $\boldsymbol{\beta}$ that minimises the sum of squared residuals. The closed-form solution is the normal equation:
+
+$$\boldsymbol{\beta} = (X^\top X)^{-1} X^\top y$$
+
+This is an exact, non-iterative solution with no hyperparameters. Under the Gauss-Markov assumptions it is the minimum-variance unbiased estimator.
+
+**Ridge Regression** adds an $\ell_2$ penalty $\alpha \|\boldsymbol{\beta}\|^2$ to the objective:
+
+$$\boldsymbol{\beta}_{\text{ridge}} = (X^\top X + \alpha I)^{-1} X^\top y$$
+
+The penalty shrinks all coefficients toward zero, trading a small amount of bias for reduced variance. As $\alpha \to 0$ the solution approaches OLS; as $\alpha \to \infty$ all coefficients approach zero. Both models assume a linear relationship between features and the target.
 
 ## Dataset
 
-- **Source:** UCI Combined Cycle Power Plant
-- **Task:** Regression — predict net electrical output (PE) in MW
-- **Samples:** 9,568
-- **Features:** 4 continuous (AT: ambient temperature, V: vacuum, AP: ambient pressure, RH: humidity)
-- **Split:** 7,654 train / 1,914 test
-- **Preprocessing:** StandardScaler fit on training data only
+**UCI Combined Cycle Power Plant** (`fetch_ucirepo(id=294)`) — 9,568 hourly measurements from a gas turbine power plant. Four continuous features: ambient temperature (AT, °C), exhaust vacuum (V, cm Hg), ambient pressure (AP, mbar), and relative humidity (RH, %). Target: net electrical energy output (PE, MW), ranging from 420 to 496 MW. No missing values.
 
-## Results
+## What the Notebook Covers
 
-| Model | Train R² | Test R² | Test MSE | Test MAE |
-|---|---|---|---|---|
-| OLS | 0.9281 | 0.9311 | 20.03 | 3.62 |
-| Ridge alpha=0.1 | 0.9281 | 0.9311 | 20.03 | 3.62 |
-| Ridge alpha=100 | 0.9276 | 0.9298 | 20.39 | 3.65 |
-
-## Key Findings
-
-**Performance and why:** OLS achieves R²=0.9311 on the test set, indicating that ambient
-temperature, vacuum, pressure, and humidity together explain over 93% of the variance in
-power output. The near-linear relationship between these thermodynamic variables and turbine
-efficiency is physically motivated: gas turbine output is governed by the Carnot cycle, in
-which ambient conditions enter the efficiency formula approximately linearly over the observed
-operating range. The predicted-vs-actual scatter confirms this: both train and test predictions
-cluster tightly around the y=x diagonal with no systematic curvature.
-
-**Regularisation effect:** Ridge with alpha=0.1 is numerically indistinguishable from OLS
-(R² identical to four decimal places). At this scale the penalty is negligible relative to the
-magnitude of X'X, so coefficient shrinkage is imperceptible. Heavy regularisation at alpha=100
-compresses all four coefficients substantially — visible in the coefficient shrinkage plot —
-and introduces enough bias to lower test R² from 0.9311 to 0.9298 and raise MSE from 20.03
-to 20.39. This is the bias–variance trade-off in direct numerical form: the penalty that would
-protect against overfitting on a noisier dataset simply adds bias here because the OLS solution
-is already stable.
-
-**Feature interpretation:** AT carries the largest negative coefficient across all three models.
-Higher ambient temperature reduces net output because warmer inlet air is less dense, reducing
-the mass flow rate through the turbine and lowering thermodynamic efficiency. This direction is
-consistent with physics and confirms the model has learned meaningful signal rather than
-spurious correlations.
-
-**Strengths of the architecture:** Linear regression provides a highly interpretable, closed-form
-solution that generalises well when the true relationship is approximately linear. On this
-dataset the linearity assumption holds strongly, yielding R²>0.93 with only four features and
-no tuning.
-
-**Limitations grounded in these results:** The residual plot shows roughly constant spread
-(homoscedasticity), which validates the linear assumption here, but the regression tree
-notebook demonstrates that a tuned tree achieves R²=0.9433 on the same data — a measurable
-gap that linear regression cannot close because it cannot represent the mild non-linearity in
-the AT–PE relationship. Linear regression also provides no mechanism to identify or handle
-feature interactions; any synergistic effect between, for example, temperature and humidity
-is averaged out rather than modelled explicitly.
+- Fitting OLS, Ridge ($\alpha = 0.1$), and Ridge ($\alpha = 100$); comparing train/test $R^2$, MSE, and MAE (OLS: test $R^2 = 0.9311$, MSE = 20.03, MAE = 3.62)
+- Coefficient shrinkage bar chart: Ridge $\alpha = 100$ visibly compresses all four weights; OLS and Ridge $\alpha = 0.1$ are numerically identical
+- Predicted-vs-actual scatter plots for all three models
+- Residual plot for OLS showing homoscedastic, zero-centred errors
