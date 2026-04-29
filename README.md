@@ -1,5 +1,7 @@
 # CMOR 438 / INDE 577 — Machine Learning
 
+[![CI](https://github.com/ashwinrao1/CMOR438-Spring-2026/actions/workflows/tests.yml/badge.svg)](https://github.com/ashwinrao1/CMOR438-Spring-2026/actions/workflows/tests.yml)
+
 From-scratch implementations of core machine learning algorithms built with
 NumPy, demonstrated on real datasets through Jupyter notebooks, and validated
 by a pytest unit test suite.
@@ -34,6 +36,28 @@ pip install -e .
 ```
 
 Requires Python 3.10 or later.
+
+## Quick start
+
+```python
+from mlpackage import (
+    RandomForestClassifier, StandardScaler, train_test_split, accuracy_score
+)
+from sklearn.datasets import load_breast_cancer
+
+X, y = load_breast_cancer(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test  = scaler.transform(X_test)
+
+clf = RandomForestClassifier(n_estimators=100, random_state=42)
+clf.fit(X_train, y_train)
+
+print(f"Train accuracy: {accuracy_score(y_train, clf.predict(X_train)):.4f}")
+print(f"Test  accuracy: {accuracy_score(y_test,  clf.predict(X_test)):.4f}")
+```
 
 ## Running the tests
 
@@ -113,13 +137,13 @@ corresponding `mlpackage` class, and produces labeled plots with
 | Notebook | Dataset | Topic |
 |---|---|---|
 | `Linear_Regression/linear_regression_example.ipynb` | Synthetic / real | OLS, Ridge, gradient descent solvers; residual analysis |
-| `Logistic_Regression/logistic_regression.ipynb` | Binary classification | Sigmoid decision boundary, ROC curve, AUC |
+| `Logistic_Regression/logistic_regression_example.ipynb` | Binary classification | Sigmoid decision boundary, ROC curve, AUC |
 | `Perceptron/perceptron_example.ipynb` | Synthetic binary | Online weight update, convergence visualization |
 | `Multilayer_Perceptron/multilayer_perceptron_example.ipynb` | Digits | Backprop MLP, loss curves, confusion matrix |
 | `Decision_Tree/decision_tree_example.ipynb` | UCI Adult Census | Depth sweep, feature importances, PCA decision boundary |
 | `Regression_Trees/regression_trees_example.ipynb` | Real-valued target | Depth vs. MSE, leaf mean prediction |
 | `Ensemble_Models/ensemble_models_example.ipynb` | Classification | Bagging, Random Forest, AdaBoost; accuracy vs. estimator count |
-| `KNN/knn_ex.ipynb` | Digits / regression | k sweep, distance weighting, regression targets |
+| `KNN/knn_example.ipynb` | Digits / regression | k sweep, distance weighting, regression targets |
 | `Gradient_Descent/gradient_descent_example.ipynb` | Synthetic | 1-D and N-D loss surface, convergence history |
 
 ### Unsupervised learning

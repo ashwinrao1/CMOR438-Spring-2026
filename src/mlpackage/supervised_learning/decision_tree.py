@@ -116,6 +116,21 @@ class DecisionTreeClassifier:
     # ------------------------------------------------------------------
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "DecisionTreeClassifier":
+        """Grow a decision tree on the training data.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Training feature matrix. Must be numeric.
+        y : array-like of shape (n_samples,)
+            Integer class labels in the range [0, n_classes).
+
+        Returns
+        -------
+        self : DecisionTreeClassifier
+            The fitted classifier. Sets ``tree_``, ``n_features_``,
+            ``n_classes_``, and ``feature_importances_``.
+        """
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
 
@@ -147,6 +162,17 @@ class DecisionTreeClassifier:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """Return the predicted class label for each sample.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,)
+            Predicted integer class labels.
+        """
         return np.argmax(self.predict_proba(X), axis=1)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:

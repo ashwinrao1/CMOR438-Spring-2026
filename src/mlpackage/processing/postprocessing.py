@@ -34,7 +34,6 @@ No sklearn dependencies are used.
 
 from __future__ import annotations
 import numpy as np
-from typing import Optional
 
 __all__ = [
     "confusion_matrix",

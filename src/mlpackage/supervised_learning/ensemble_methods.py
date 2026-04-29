@@ -529,4 +529,5 @@ class AdaBoostClassifier:
         return np.where(totals == 0, 1.0 / self.n_classes_, scores / totals)
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Return classification accuracy on (X, y)."""
         return float(np.mean(self.predict(X) == np.asarray(y)))
