@@ -15,7 +15,7 @@ CMOR438-Spring-2026/
 │   ├── supervised_learning/
 │   └── unsupervised_learning/
 ├── tests/                  # pytest unit test suite
-├── data/                   # Local datasets (mall_customers.csv)
+├── data/                   # Local datasets
 ├── pyproject.toml          # Package build and dependency config
 └── requirements.txt        # Full environment for running notebooks
 ```
@@ -70,8 +70,8 @@ CI runs the same command on every push via `.github/workflows/tests.yml`.
 ## mlpackage
 
 A from-scratch machine learning library. scikit-learn is never used for
-models or preprocessing; it appears only for loading built-in datasets
-(`load_digits`, `load_breast_cancer`) and `adjusted_rand_score`.
+models or preprocessing; it appears only for dataset loading
+(`load_breast_cancer` in the quick-start example) and `adjusted_rand_score`.
 
 All public classes and functions are importable from the top level:
 
@@ -136,24 +136,24 @@ corresponding `mlpackage` class, and produces labeled plots with
 
 | Notebook | Dataset | Topic |
 |---|---|---|
-| `Linear_Regression/linear_regression_example.ipynb` | Synthetic / real | OLS, Ridge, gradient descent solvers; residual analysis |
-| `Logistic_Regression/logistic_regression_example.ipynb` | Binary classification | Sigmoid decision boundary, ROC curve, AUC |
-| `Perceptron/perceptron_example.ipynb` | Synthetic binary | Online weight update, convergence visualization |
-| `Multilayer_Perceptron/multilayer_perceptron_example.ipynb` | Digits | Backprop MLP, loss curves, confusion matrix |
-| `Decision_Tree/decision_tree_example.ipynb` | UCI Adult Census | Depth sweep, feature importances, PCA decision boundary |
-| `Regression_Trees/regression_trees_example.ipynb` | Real-valued target | Depth vs. MSE, leaf mean prediction |
-| `Ensemble_Models/ensemble_models_example.ipynb` | Classification | Bagging, Random Forest, AdaBoost; accuracy vs. estimator count |
-| `KNN/knn_example.ipynb` | Digits / regression | k sweep, distance weighting, regression targets |
-| `Gradient_Descent/gradient_descent_example.ipynb` | Synthetic | 1-D and N-D loss surface, convergence history |
+| `Linear_Regression/linear_regression_example.ipynb` | UCI Combined Cycle Power Plant (9,568 samples) | OLS, Ridge, gradient descent solvers; residual analysis |
+| `Logistic_Regression/logistic_regression_example.ipynb` | UCI Bank Marketing (10,000 samples) | Sigmoid decision boundary, ROC curve, AUC |
+| `Perceptron/perceptron_example.ipynb` | UCI Bank Marketing (5,000 samples) | Online weight update, convergence visualization |
+| `Multilayer_Perceptron/multilayer_perceptron_example.ipynb` | UCI Dry Bean (classification) + UCI CCPP (regression) | Backprop MLP, architecture sweep, loss curves |
+| `Decision_Tree/decision_tree_example.ipynb` | UCI Adult Census (32,561 samples) | Depth sweep, feature importances, PCA decision boundary |
+| `Regression_Trees/regression_trees_example.ipynb` | UCI Combined Cycle Power Plant (9,568 samples) | Depth vs. MSE, comparison to OLS |
+| `Ensemble_Models/ensemble_models_example.ipynb` | UCI Adult Census (32,561 samples) | Bagging, Random Forest, AdaBoost; accuracy vs. estimator count |
+| `KNN/knn_example.ipynb` | UCI Dry Bean (13,611 samples) | k sweep, distance metric comparison, PCA visualization |
+| `Gradient_Descent/gradient_descent_example.ipynb` | UCI Combined Cycle Power Plant (9,568 samples) | 1-D and N-D loss surface, convergence history, GD vs. OLS |
 
 ### Unsupervised learning
 
 | Notebook | Dataset | Topic |
 |---|---|---|
-| `K-Means_Clustering/k_means_clustering_example.ipynb` | Mall Customers | Elbow method, cluster profiles, inertia |
-| `DBScan/dbscan_example.ipynb` | Synthetic shapes | Noise detection, eps / min_samples sensitivity |
-| `PCA/pca_example.ipynb` | Breast Cancer | Scree plot, biplot, reconstruction error |
-| `Community_Detection/community_detection_example.ipynb` | Graph data | Label propagation, modularity, community structure |
+| `K-Means_Clustering/k_means_clustering_example.ipynb` | UCI Dry Bean (13,611 samples) | Elbow method, ARI vs. ground truth, cluster profiles |
+| `DBScan/dbscan_example.ipynb` | USGS Global Earthquakes 2023 (1,780 events) | Noise detection, eps sensitivity, tectonic arc geometry |
+| `PCA/pca_example.ipynb` | UCI Dry Bean (13,611 samples) | Scree plot, feature loadings, reconstruction error |
+| `Community_Detection/community_detection_example.ipynb` | Zachary's Karate Club (34 nodes, 78 edges) | Label propagation, modularity, ARI vs. ground-truth factions |
 
 ## License
 
